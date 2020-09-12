@@ -1,14 +1,16 @@
 var app = new Vue({
     el: '#app',
     data: {
-        requests: []
+        requests: [],
     },
     methods: {
         upvoteRequest(id) {
+            //console.log(id);
             const upvote = firebase.functions().httpsCallable('upvote');
-            upvote({ id }).catch(error => {
-                console.log(error.message);
-            });
+            upvote({ id })
+                .catch(error => {
+                    showNotification(error.message);
+                });
         }
     },
     mounted() {
@@ -19,7 +21,6 @@ var app = new Vue({
                 requests.push({ ...doc.data(), id: doc.id });
             });
             this.requests = requests;
-
         });
     }
 });
