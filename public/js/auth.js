@@ -21,7 +21,6 @@ registerForm.addEventListener('submit', (e) => {
 
     firebase.auth().createUserWithEmailAndPassword(email, password)
         .then(user => {
-            console.log('registered', user);
             registerForm.reset();
         })
         .catch(error => {
@@ -38,7 +37,6 @@ loginForm.addEventListener('submit', (e) => {
 
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then(user => {
-            console.log('logged in', user);
             loginForm.reset();
         })
         .catch(error => {
