@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Request/Vote</title>
+    <title>Useful URLs</title>
     <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
@@ -11,7 +11,8 @@
     <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
-    <div class="notification"></div>
+    <div class="errorNotification"></div>
+    <div class="successNotification"></div>
     <!-- auth modals -->
     <div class="auth open">
       <div class="modal active">
@@ -22,12 +23,14 @@
             name="email"
             placeholder="Email"
             autocomplete="email"
+            required
           />
           <input
             type="password"
             name="password"
             placeholder="Password"
             autocomplete="new-password"
+            required
           />
           <button>Login</button>
           <p class="error"></p>
@@ -42,12 +45,14 @@
             name="email"
             placeholder="Email"
             autocomplete="email"
+            required
           />
           <input
             type="password"
             name="password"
             placeholder="Password"
             autocomplete="new-password"
+            required
           />
           <button>Register</button>
           <p class="error"></p>
@@ -56,13 +61,15 @@
       </div>
     </div>
 
-    <!-- new request modal -->
-    <div class="new-request">
+    <!-- new link modal -->
+    <div class="link-modal">
       <div class="modal">
-        <h2>Request a Tutorial</h2>
+        <h2>New/Update URL</h2>
         <form>
-          <input type="text" name="request" placeholder="Request..." />
-          <button>Submit Request</button>
+          <input type="text" name="title" placeholder="Title" />
+          <input type="text" name="url" placeholder="URL" />
+          <input type="hidden" name="id" />
+          <button>Save</button>
           <p class="error"></p>
         </form>
       </div>
@@ -70,22 +77,32 @@
 
     <header>
       <nav>
-        <a class="add-request">add request</a>
-        <a class="sign-out">sign out</a>
+        <a class="link-modal-btn">New link</a>
+        <a class="sign-out">Sign out</a>
       </nav>
     </header>
 
     <section class="content" id="app">
-      <h1>Tutorial Requests</h1>
-      <ul class="request-list">
-        <li v-for="request in requests">
-          <span class="text">{{request.text}}</span>
+      <h1>URL Links</h1>
+      <ul class="link-list">
+        <li>
+          <span class="link-title"> <h4>Title</h4> </span>
+          <span class="link-url"> <h4>URL</h4> </span>
+          <span class="link-url"> <h4></h4> </span>
+        </li>
+        <li v-for="link in links">
+          <span class="link-title">
+            <a target="_blank" :href="`//${link.url}`">{{link.title}}</a>
+          </span>
+          <span class="link-url">
+            <a target="_blank" :href="`//${link.url}`">{{link.url}}</a>
+          </span>
           <div>
-            <span class="votes">{{request.upvotes}}</span>
-            <i
-              class="material-icons upvote"
-              v-on:click="upvoteRequest(request.id)"
-              >arrow_upward</i
+            <i class="material-icons edit" v-on:click="editLink(link.id)"
+              >edit</i
+            >
+            <i class="material-icons remove" v-on:click="removeLink(link.id)"
+              >remove_circle</i
             >
           </div>
         </li>
@@ -104,6 +121,7 @@
     <script src="/__/firebase/init.js"></script>
     <script src="./js/app.js"></script>
     <script src="./js/auth.js"></script>
-    <script src="./js/request.js"></script>
+    <script src="./js/link.js"></script>
+    <script src="./js/api.js"></script>
   </body>
 </html>

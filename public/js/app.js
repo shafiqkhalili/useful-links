@@ -1,45 +1,70 @@
-const requestModal = document.querySelector('.new-request');
-const requestLink = document.querySelector('.add-request');
-const requestForm = document.querySelector('.new-request form');
 
+
+const linkModal = document.querySelector('.link-modal');
+const newLinkBtn = document.querySelector('.link-modal-btn');
+const linkForm = document.querySelector('.link-modal form');
+
+const openModal = () => {
+    linkForm.reset();
+    // linkForm.querySelector("input[name='id']").value = "";
+    linkForm.id.value = "";
+    linkModal.classList.add('open');
+};
 // open request modal
-requestLink.addEventListener('click', () => {
-    requestModal.classList.add('open');
-});
+newLinkBtn.addEventListener('click', openModal);
+
 
 // close request modal
-requestModal.addEventListener('click', (e) => {
-    if (e.target.classList.contains('new-request')) {
-        requestModal.classList.remove('open');
+linkModal.addEventListener('click', (e) => {
+    if (e.target.classList.contains('link-modal')) {
+        linkModal.classList.remove('open');
     }
 });
 
 // add a new request
-requestForm.addEventListener('submit', (e) => {
+linkForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const addRequest = firebase.functions().httpsCallable('addRequest');
-    addRequest({
-        text: requestForm.request.value
-    })
-        .then(() => {
-            requestForm.reset();
-            requestForm.querySelector('.error').textContent = '';
-            requestModal.classList.remove('open');
-        })
-        .catch(error => {
-            requestForm.querySelector('.error').textContent = error.message;
-        });
+    const data = {
+        title: linkForm.title.value,
+        url: linkForm.url.value
+    };
+    if (linkForm.id.value !== "") {
+        updateLink(linkForm.id.value, data);
+    } else {
+        addLink(data);
+    }
+
 });
 
 // notification
-const notification = document.querySelector('.notification');
+const errorNotification = document.querySelector('.errorNotification');
 
-const showNotification = (message) => {
-    notification.textContent = message;
-    notification.classList.add('active');
+const showErrorNotification = (message) => {
+    errorNotification.textContent = message;
+    errorNotification.classList.add('active');
     setTimeout(() => {
-        notification.classList.remove('active');
-        notification.textContent = '';
+        errorNotification.classList.remove('active');
+        errorNotification.textContent = '';
     }, 4000);
+};
+const successNotification = document.querySelector('.errorNotification');
+
+const showSuccessNotification = (message) => {
+    successNotification.textContent = message;
+    successNotification.classList.add('active');
+    setTimeout(() => {
+        successNotification.classList.remove('active');
+        successNotification.textContent = '';
+    }, 4000);
+};
+
+const editLinkModal = async (id) => {
+    openModal();
+    linkForm.id.value = id;
+    const data = await getLink(id);
+    linkForm.title.value = data.title;
+    linkForm.url.value = data.url;
+
 };

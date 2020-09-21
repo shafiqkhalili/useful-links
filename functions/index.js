@@ -1,87 +1,120 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require('body-parser');
+// const { validateFirebaseIdToken } = require('./validation');
+
 admin.initializeApp();
+const db = admin.firestore();
+
+const app = express();
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+// Configuring body parser middleware
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+app.use(cors({ origin: ['http://localhost:5000', 'https://useful-links-5c105.web.app'] }));
+// app.use((req, res, next) => {
+//     res.header("Access-Control-Allow-Origin", "https://useful-links-5c105.web.app");
+//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//     next();
+// });
+// app.use(validateFirebaseIdToken);
 
 // auth trigger (new user signup)
 exports.newUserSignUp = functions.auth.user().onCreate(user => {
     // for background triggers you must return a value/promise
-    return admin.firestore().collection('users').doc(user.uid).set({
-        email: user.email,
-        upvotedOn: [],
+    return db.collection('users').doc(user.uid).set({
+        email: user.email
     });
 });
 
 // auth trigger (user deleted)
 exports.userDeleted = functions.auth.user().onDelete(user => {
-    const doc = admin.firestore().collection('users').doc(user.uid);
+    const doc = db.collection('users').doc(user.uid);
     return doc.delete();
 });
 
-// http callable function (adding a request)
-exports.addRequest = functions.https.onCall((data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError(
-            'unauthenticated',
-            'only authenticated users can add requests'
-        );
+
+//Express API
+
+app.get("/", async (req, res) => {
+    // if (!req.auth) {
+    //     throw new functions.https.HttpsError(
+    //         'unauthenticated',
+    //         'only authenticated users can add requests'
+    //     );
+    // }
+    try {
+        const snapshot = await db.collection("links").get();
+
+        let links = [];
+        snapshot.forEach((doc) => {
+            let id = doc.id;
+            let data = doc.data();
+
+            links.push({ id, ...data });
+        });
+
+        res.status(200).send(links);
+
+    } catch (error) {
+        res.status(500).send(error.message);
     }
-    if (data.text.length > 30) {
-        throw new functions.https.HttpsError(
-            'invalid-argument',
-            'request must be no more than 30 characters long'
-        );
-    }
-    return admin.firestore().collection('requests').add({
-        text: data.text,
-        upvotes: 0
-    });
 });
 
-// // upvote callable function
-exports.upvote = functions.https.onCall(async (data, context) => {
-    // check auth state
-    if (!context.auth) {
-        throw new functions.https.HttpsError(
-            'unauthenticated',
-            'only authenticated users can vote up requests'
-        );
+app.get("/:id", async (req, res) => {
+    try {
+        const snapshot = await db.collection('links').doc(req.params.id).get();
+
+        const userId = snapshot.id;
+        const userData = snapshot.data();
+
+        res.status(200).send({ id: userId, ...userData });
+
+    } catch (error) {
+        res.status(500).send(error.message);
     }
-    // get refs for user doc & request doc
-    const user = admin.firestore().collection('users').doc(context.auth.uid);
-    const request = admin.firestore().collection('requests').doc(data.id);
-
-    const doc = await user.get();
-
-    // check thew user hasn't already upvoted
-    if (doc.data().upvotedOn.includes(data.id)) {
-        throw new functions.https.HttpsError(
-            'failed-precondition',
-            'You can only vote something up once'
-        );
-    }
-
-    // update the array in user document
-    await user.update({
-        upvotedOn: [...doc.data().upvotedOn, data.id]
-    });
-
-    // update the votes on the request
-    return request.update({
-        upvotes: admin.firestore.FieldValue.increment(1)
-    });
 });
-//Firestore trigger for tracking activities
-exports.logActivities = functions.firestore.document('/{collection}/{id}')
-    .onCreate((snap, context) => {
-        const collection = context.params.collection;
-        const id = context.params.id;
-        const activities = admin.firestore().collection('activities');
 
-        if (collection === 'requests') {
-            return activities.add({ text: 'A new request has been added.' });
-        }
-        if (collection === 'users') {
-            return activities.add({ text: 'A new user has signed up.' });
-        }
-        return null;
-    });
+app.post("/", async (req, res) => {
+    try {
+        const link = req.body;
+
+        await db.collection("links").add(link);
+
+        res.status(201).send();
+
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+});
+
+app.put("/:id", async (req, res) => {
+    try {
+        const body = req.body;
+
+        await db.collection('links').doc(req.params.id).update(body);
+
+        res.status(200).send();
+
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+});
+
+app.delete("/:id", async (req, res) => {
+    try {
+
+        await db.collection("links").doc(req.params.id).delete();
+
+        res.status(200).send();
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+});
+
+exports.links = functions.https.onRequest(app);
