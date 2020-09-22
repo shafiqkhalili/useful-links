@@ -1,7 +1,38 @@
+// Initialize your Web app as described in the Get started for Web
+// Firebase previously initialized using firebase.initializeApp().
+
 const apiUrl = 'https://us-central1-useful-links-5c105.cloudfunctions.net/links';
+
+const getUserToken = async () => {
+    try {
+        return await firebase.auth().currentUser.getIdToken(true);
+    } catch (error) {
+        showErrorNotification(error);
+    };
+};
+
+const getUserId = async () => {
+    try {
+        let user = await firebase.auth().currentUser;
+        if (user) {
+            uid = user.uid;
+            console.log("User UID: ", user.uid);
+        }
+    } catch (error) {
+        showErrorNotification(error);
+    }
+};
+
 async function deleteLink(id) {
+
+    userToken = await getUserToken();
     try {
-        const response = await fetch(`${apiUrl}/${id}`, { method: "DELETE" });
+        const response = await fetch(`${apiUrl}/${id}`, {
+            method: "DELETE",
+            headers: {
+                'Authorization': userToken
+            },
+        });
 
         if (response.ok) {
             showSuccessNotification("Link removed!");
@@ -9,35 +40,21 @@ async function deleteLink(id) {
         else {
             showErrorNotification(response.statusText);
         }
-
     }
     catch (err) {
         showErrorNotification(err);
     }
-}
-async function updateLink(id) {
-    try {
-        const response = await fetch(`${apiUrl}/${id}`);
-
-        if (response.ok) {
-            showSuccessNotification("Link removed!");
-        }
-        else {
-            showErrorNotification(response.statusText);
-        }
-
-    }
-    catch (err) {
-        showErrorNotification(err);
-    }
-    console.log('updating');
 }
 
 async function addLink(data) {
+    userToken = await getUserToken();
     try {
         const response = await fetch(apiUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                'Authorization': userToken
+            },
             body: JSON.stringify(data)
         });
 
@@ -53,11 +70,16 @@ async function addLink(data) {
         showErrorNotification(err);
     }
 }
+
 async function updateLink(id, data) {
+    userToken = await getUserToken();
     try {
         const response = await fetch(`${apiUrl}/${id}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                'Authorization': userToken
+            },
             body: JSON.stringify(data)
         });
 
@@ -74,8 +96,15 @@ async function updateLink(id, data) {
     }
 }
 async function getLink(id) {
+    userToken = await getUserToken();
+    debugger;
     try {
-        const response = await fetch(`${apiUrl}/${id}`);
+        const response = await fetch(`${apiUrl}/${id}`, {
+            method: "GET",
+            headers: {
+                'Authorization': userToken
+            }
+        });
 
         if (response.ok) {
 
@@ -89,8 +118,14 @@ async function getLink(id) {
     }
 }
 const getLinks = async () => {
+    userToken = await getUserToken();
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                'Authorization': userToken
+            }
+        });
 
         if (response.ok) {
             links = await response.json();

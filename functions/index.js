@@ -3,12 +3,54 @@ const admin = require('firebase-admin');
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require('body-parser');
-// const { validateFirebaseIdToken } = require('./validation');
+const cookieParser = require('cookie-parser')();
 
 admin.initializeApp();
 const db = admin.firestore();
 
 const app = express();
+
+const validateFirebaseIdToken = async (req, res, next) => {
+    console.log('Check if request is authorized with Firebase ID token');
+
+    if ((!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) &&
+        !(req.cookies && req.cookies.__session)) {
+        console.error('No Firebase ID token was passed as a Bearer token in the Authorization header.',
+            'Make sure you authorize your request by providing the following HTTP header:',
+            'Authorization: Bearer <Firebase ID Token>',
+            'or by passing a "__session" cookie.');
+        res.status(403).send('Unauthorized');
+        return;
+    }
+
+    let idToken;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+        console.log('Found "Authorization" header');
+        // Read the ID Token from the Authorization header.
+        idToken = req.headers.authorization.split('Bearer ')[1];
+    } else if (req.cookies) {
+        console.log('Found "__session" cookie');
+        // Read the ID Token from cookie.
+        idToken = req.cookies.__session;
+    } else {
+        // No cookie
+        res.status(403).send('Unauthorized');
+        return;
+    }
+
+    try {
+        const decodedIdToken = await admin.auth().verifyIdToken(idToken);
+        console.log('ID Token correctly decoded', decodedIdToken);
+        req.user = decodedIdToken;
+        next();
+        return;
+    } catch (error) {
+        console.error('Error while verifying Firebase ID token:', error);
+        res.status(403).send('Unauthorized');
+        return;
+    }
+};
+
 // app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
 
@@ -17,12 +59,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.use(cors({ origin: ['http://localhost:5000', 'https://useful-links-5c105.web.app'] }));
-// app.use((req, res, next) => {
-//     res.header("Access-Control-Allow-Origin", "https://useful-links-5c105.web.app");
-//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//     next();
-// });
-// app.use(validateFirebaseIdToken);
+//Validating user token
+app.use(cookieParser);
+app.use(validateFirebaseIdToken);
 
 // auth trigger (new user signup)
 exports.newUserSignUp = functions.auth.user().onCreate(user => {
@@ -42,7 +81,8 @@ exports.userDeleted = functions.auth.user().onDelete(user => {
 //Express API
 
 app.get("/", async (req, res) => {
-    // if (!req.auth) {
+    console.log("Req: ", req.authorization);
+    // if (!req.user) {
     //     throw new functions.https.HttpsError(
     //         'unauthenticated',
     //         'only authenticated users can add requests'

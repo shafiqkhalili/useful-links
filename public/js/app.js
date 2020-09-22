@@ -64,7 +64,9 @@ const editLinkModal = async (id) => {
     openModal();
     linkForm.id.value = id;
     const data = await getLink(id);
-    linkForm.title.value = data.title;
-    linkForm.url.value = data.url;
-
+    debugger;
+    if (data) {
+        linkForm.title.value = data.title;
+        linkForm.url.value = data.url;
+    }
 };
