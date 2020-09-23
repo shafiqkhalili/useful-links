@@ -1,44 +1,67 @@
 // Initialize your Web app as described in the Get started for Web
 // Firebase previously initialized using firebase.initializeApp().
 
-const apiUrl = 'https://us-central1-useful-links-5c105.cloudfunctions.net/links';
-
-const getUserToken = async () => {
-    try {
-        return await firebase.auth().currentUser.getIdToken(true);
-    } catch (error) {
-        showErrorNotification(error);
-    };
+// const apiUrl = 'http://localhost:5001/useful-links-5c105/us-central1/users/';
+const config = {
+    userCollection: "https://us-central1-useful-links-5c105.cloudfunctions.net/users",
+    linkCollection: "links",
 };
+const getUserToken = () => {
+    return new Promise((resolve, reject) => {
 
-const getUserId = async () => {
-    try {
-        let user = await firebase.auth().currentUser;
-        if (user) {
-            uid = user.uid;
-            console.log("User UID: ", user.uid);
+        try {
+            const userToken = firebase.auth().currentUser.getIdToken(true);
+            if (userToken) {
+                resolve(userToken);
+            } else {
+                showErrorNotification('userToken not fetched');
+                reject('Promise rejected!');
+            }
+        } catch (error) {
+            showErrorNotification('userToken not fetched');
+            reject('Promise rejected!');
         }
-    } catch (error) {
-        showErrorNotification(error);
-    }
+    });
 };
 
-async function deleteLink(id) {
+const getUserId = () => {
+    return new Promise((resolve, reject) => {
 
-    userToken = await getUserToken();
+        try {
+            let user = firebase.auth().currentUser;
+            if (user) {
+                resolve(user.uid);
+            } else {
+                showErrorNotification('userToken not fetched');
+                reject('Promise rejected!');
+            }
+        } catch (error) {
+            showErrorNotification('uid not fetched');
+            reject('Promise rejected!');
+        }
+    });
+};
+
+async function deleteLink(docId) {
     try {
-        const response = await fetch(`${apiUrl}/${id}`, {
+        const userToken = await getUserToken();
+        const uid = await getUserId();
+
+        const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}/${docId}`;
+        const response = await fetch(apiUrl, {
             method: "DELETE",
             headers: {
-                'Authorization': userToken
+                'Authorization': `Bearer ${userToken}`
             },
         });
-
         if (response.ok) {
             showSuccessNotification("Link removed!");
-        }
-        else {
-            showErrorNotification(response.statusText);
+
+            deleteModal.querySelector('.error').textContent = '';
+            deleteModal.classList.remove('open');
+        } else {
+
+            showErrorNotification("Oops! link not deleted");
         }
     }
     catch (err) {
@@ -47,13 +70,16 @@ async function deleteLink(id) {
 }
 
 async function addLink(data) {
-    userToken = await getUserToken();
     try {
+        const userToken = await getUserToken();
+        const uid = await getUserId();
+
+        const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}`;
         const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                'Authorization': userToken
+                'Authorization': `Bearer ${userToken}`
             },
             body: JSON.stringify(data)
         });
@@ -62,23 +88,25 @@ async function addLink(data) {
             linkForm.reset();
             linkForm.querySelector('.error').textContent = '';
             linkModal.classList.remove('open');
-        } else {
-            linkForm.querySelector('.error').textContent = error.message;
-        };
+        }
     }
     catch (err) {
         showErrorNotification(err);
     }
 }
 
-async function updateLink(id, data) {
-    userToken = await getUserToken();
+async function updateLink(docId, data) {
     try {
-        const response = await fetch(`${apiUrl}/${id}`, {
+        const userToken = await getUserToken();
+        const uid = await getUserId();
+
+        const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}/${docId}`;
+
+        const response = await fetch(`${apiUrl}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
-                'Authorization': userToken
+                'Authorization': `Bearer ${userToken}`
             },
             body: JSON.stringify(data)
         });
@@ -95,43 +123,50 @@ async function updateLink(id, data) {
         showErrorNotification(err);
     }
 }
-async function getLink(id) {
-    userToken = await getUserToken();
-    debugger;
+async function getLink(docId) {
+
     try {
-        const response = await fetch(`${apiUrl}/${id}`, {
-            method: "GET",
+        const userToken = await getUserToken();
+        const uid = await getUserId();
+
+        const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}/${docId}`;
+        const response = await fetch(`${apiUrl}`, {
             headers: {
-                'Authorization': userToken
+                'Authorization': `Bearer ${userToken}`
             }
         });
-
         if (response.ok) {
+            return await response.json();
+        } else if (response.status === 400) {
+            return response('Not found');
+        }
+    } catch (error) {
+        showErrorNotification(error);
+    }
 
-            return response.json();
-        } else {
-            linkForm.querySelector('.error').textContent = error.message;
-        };
-    }
-    catch (err) {
-        showErrorNotification(err);
-    }
 }
 const getLinks = async () => {
-    userToken = await getUserToken();
     try {
+        const userToken = await getUserToken();
+        const uid = await getUserId();
+
+        const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}`;
+
         const response = await fetch(apiUrl, {
-            method: "GET",
             headers: {
-                'Authorization': userToken
+                'Authorization': `Bearer ${userToken}`
             }
         });
 
         if (response.ok) {
-            links = await response.json();
-        }
-        else {
-            showErrorNotification(err);
+
+            const links = await response.json();
+            // return links;
+            let linksArray = [];
+            links.forEach(doc => {
+                linksArray.push({ ...doc, id: doc.id });
+            });
+            return linksArray;
         }
     }
     catch (err) {

@@ -47,13 +47,18 @@ loginForm.addEventListener('submit', (e) => {
 // sign out
 signOut.addEventListener('click', () => {
     firebase.auth().signOut()
-        .then(() => console.log('signed out'));
+        .then(() => {
+            const ul = document.querySelector('.link-list');
+            ul.innerHTML = '';
+        });
+
 });
 
 // auth listener
 firebase.auth().onAuthStateChanged(user => {
 
     if (user) {
+        rednerLinks();
         authWrapper.classList.remove('open');
         authModals.forEach(modal => modal.classList.remove('active'));
     } else {

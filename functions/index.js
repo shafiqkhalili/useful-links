@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')();
 
 admin.initializeApp();
-const db = admin.firestore();
+const userCollectionRef = admin.firestore().collection('users');
 
 const app = express();
 
@@ -66,30 +66,24 @@ app.use(validateFirebaseIdToken);
 // auth trigger (new user signup)
 exports.newUserSignUp = functions.auth.user().onCreate(user => {
     // for background triggers you must return a value/promise
-    return db.collection('users').doc(user.uid).set({
+    return userCollectionRef.doc(user.uid).set({
         email: user.email
     });
 });
 
 // auth trigger (user deleted)
 exports.userDeleted = functions.auth.user().onDelete(user => {
-    const doc = db.collection('users').doc(user.uid);
+    const doc = userCollectionRef.doc(user.uid);
     return doc.delete();
 });
 
 
 //Express API
 
-app.get("/", async (req, res) => {
-    console.log("Req: ", req.authorization);
-    // if (!req.user) {
-    //     throw new functions.https.HttpsError(
-    //         'unauthenticated',
-    //         'only authenticated users can add requests'
-    //     );
-    // }
+app.get("/:uid/links", async (req, res) => {
+
     try {
-        const snapshot = await db.collection("links").get();
+        const snapshot = await userCollectionRef.doc(req.params.uid).collection("links").get();
 
         let links = [];
         snapshot.forEach((doc) => {
@@ -98,33 +92,37 @@ app.get("/", async (req, res) => {
 
             links.push({ id, ...data });
         });
-
-        res.status(200).send(links);
-
+        if (links.length > 0) {
+            res.status(200).send(links);
+        } else {
+            res.status(404).send(`No data found for ${req.params.uid}!`);
+        }
     } catch (error) {
         res.status(500).send(error.message);
     }
 });
 
-app.get("/:id", async (req, res) => {
+app.get("/:uid/links/:docId", async (req, res) => {
     try {
-        const snapshot = await db.collection('links').doc(req.params.id).get();
-
-        const userId = snapshot.id;
-        const userData = snapshot.data();
-
-        res.status(200).send({ id: userId, ...userData });
+        const snapshot = await userCollectionRef.doc(req.params.uid).collection('links').doc(req.params.docId).get();
+        if (snapshot.exists) {
+            const userId = snapshot.id;
+            const userData = snapshot.data();
+            res.status(200).send({ id: userId, ...userData });
+        } else {
+            res.status(404).send(`Document with id: ${req.params.docId} not found!`);
+        }
 
     } catch (error) {
         res.status(500).send(error.message);
     }
 });
 
-app.post("/", async (req, res) => {
+app.post("/:uid/links", async (req, res) => {
     try {
         const link = req.body;
 
-        await db.collection("links").add(link);
+        await userCollectionRef.doc(req.params.uid).collection("links").add(link);
 
         res.status(201).send();
 
@@ -133,11 +131,11 @@ app.post("/", async (req, res) => {
     }
 });
 
-app.put("/:id", async (req, res) => {
+app.put("/:uid/links/:docId", async (req, res) => {
     try {
         const body = req.body;
 
-        await db.collection('links').doc(req.params.id).update(body);
+        await userCollectionRef.doc(req.params.uid).collection('links').doc(req.params.docId).update(body);
 
         res.status(200).send();
 
@@ -146,15 +144,18 @@ app.put("/:id", async (req, res) => {
     }
 });
 
-app.delete("/:id", async (req, res) => {
+app.delete("/:uid/links/:docId", async (req, res) => {
     try {
 
-        await db.collection("links").doc(req.params.id).delete();
-
-        res.status(200).send();
+        const result = await userCollectionRef.doc(req.params.uid).collection("links").doc(req.params.docId).delete();
+        if (result) {
+            res.status(200).send(`Doc ${req.params.docId} deleted successfully!`);
+        } else {
+            res.status(404).send(`Doc ${req.params.docId} not found! ${result}`);
+        }
     } catch (error) {
         res.status(500).send(error.message);
     }
 });
 
-exports.links = functions.https.onRequest(app);
+exports.users = functions.https.onRequest(app);

@@ -74,6 +74,16 @@
         </form>
       </div>
     </div>
+    <div class="delete-modal">
+      <div class="modal">
+        <h2>Cofirm deleting link!</h2>
+
+        <button type="button" class="btn-cancel" name="cancel">Cancel</button>
+        <button type="button" class="btn-confirm" name="confirm">Delete</button>
+
+        <p class="error"></p>
+      </div>
+    </div>
 
     <header>
       <nav>
@@ -83,32 +93,9 @@
     </header>
 
     <section class="content" id="app">
-      <h1>URL Links</h1>
-      <ul class="link-list">
-        <li>
-          <span class="link-title"> <h4>Title</h4> </span>
-          <span class="link-url"> <h4>URL</h4> </span>
-          <span class="link-url"> <h4></h4> </span>
-        </li>
-        <li v-for="link in links">
-          <span class="link-title">
-            <a target="_blank" :href="`//${link.url}`">{{link.title}}</a>
-          </span>
-          <span class="link-url">
-            <a target="_blank" :href="`//${link.url}`">{{link.url}}</a>
-          </span>
-          <div>
-            <i class="material-icons edit" v-on:click="editLink(link.id)"
-              >edit</i
-            >
-            <i class="material-icons remove" v-on:click="removeLink(link.id)"
-              >remove_circle</i
-            >
-          </div>
-        </li>
-      </ul>
+      <h1>URLs List</h1>
+      <ul class="link-list"></ul>
     </section>
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <!-- The core Firebase JS SDK is always required and must be listed first -->
     <script src="/__/firebase/7.20.0/firebase-app.js"></script>
 
@@ -119,9 +106,8 @@
 
     <!-- Initialize Firebase -->
     <script src="/__/firebase/init.js"></script>
-    <script src="./js/app.js"></script>
     <script src="./js/auth.js"></script>
-    <script src="./js/link.js"></script>
+    <script src="./js/app.js"></script>
     <script src="./js/api.js"></script>
   </body>
 </html>
