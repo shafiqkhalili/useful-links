@@ -20,12 +20,20 @@ ul {
 
 /* header styles */
 header {
+  position: -webkit-sticky;
+  position: sticky;
+  display: flex;
+  justify-content: space-between;
+  top: 0;
   width: 100%;
   padding: 20px;
   text-align: right;
   background: white;
   box-sizing: border-box;
   box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.1);
+}
+header h1 {
+  margin: 0;
 }
 header a {
   margin-left: 10px;
@@ -42,6 +50,8 @@ header a:hover {
 .content {
   max-width: 800px;
   margin: 40px auto 0;
+  max-height: 700px;
+  overflow: scroll;
 }
 
 /* link list styles */
@@ -81,6 +91,10 @@ header a:hover {
 }
 .link-list .remove:active {
   background: #ffe100;
+}
+
+.link-url a:hover {
+  color: cyan;
 }
 
 /* modal styles */
@@ -123,6 +137,18 @@ input {
   padding: 8px 2px;
   border-width: 0 0 2px 0;
   width: 100%;
+}
+header input {
+  width: 40%;
+  padding: 0 20px;
+  margin: 0;
+  list-style-type: none;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+}
+header nav {
+  place-self: center;
 }
 button {
   margin-top: 10px;
@@ -185,7 +211,7 @@ button.btn-confirm {
   margin-left: -110px;
   top: 0;
   border-radius: 0 0 5px 5px;
-  background: rgb(47, 255, 220);
+  background: cyan;
   text-align: center;
   color: #fff;
   margin-top: -100%;

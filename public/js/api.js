@@ -145,7 +145,7 @@ async function getLink(docId) {
     }
 
 }
-const getLinks = async () => {
+const getLinks = async (search) => {
     try {
         const userToken = await getUserToken();
         const uid = await getUserId();
