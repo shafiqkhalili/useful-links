@@ -34,7 +34,7 @@ loginForm.addEventListener('submit', (e) => {
 
     const email = loginForm.email.value;
     const password = loginForm.password.value;
-
+    loginForm.querySelector('.error').textContent = "";
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then(user => {
             loginForm.reset();
@@ -58,7 +58,8 @@ signOut.addEventListener('click', () => {
 firebase.auth().onAuthStateChanged(user => {
 
     if (user) {
-        rednerLinks();
+        renderLinks();
+
         authWrapper.classList.remove('open');
         authModals.forEach(modal => modal.classList.remove('active'));
     } else {

@@ -59,12 +59,12 @@ const deleteConfirm = async (id) => {
         requestPending = true;
         linkForm.id.value = id;
         const result = await deleteLink(id);
-        await rednerLinks();
+        await renderLinks();
         requestPending = false;
     }
 };
 
-const rednerLinks = async (search = "") => {
+const renderLinks = async (search = "") => {
     try {
         const uid = await getUserId();
 
@@ -100,7 +100,9 @@ const rednerLinks = async (search = "") => {
             linkUl.appendChild(li);
 
         });
-
+        if (links !== undefined && links.length === 0) {
+            linkUl.innerHTML = `<li>No data found</li>`;
+        }
     } catch (error) {
         showErrorNotification(error);
 
@@ -114,7 +116,7 @@ searchInput.addEventListener('keyup', async (e) => {
     const search = e.target.value;
     if (search.length > 3 && !requestPending) {
         requestPending = true;
-        await rednerLinks(search.toLowerCase());
+        await renderLinks(search.toLowerCase());
         requestPending = false;
     }
 });
@@ -150,7 +152,7 @@ linkForm.addEventListener('submit', async (e) => {
         requestPending = false;
     }
 
-    await rednerLinks();
+    await renderLinks();
 });
 const lazyLoad = async () => {
     const scrollIsAtTheBottom = (document.documentElement.scrollHeight - window.innerHeight) === window.scrollY;

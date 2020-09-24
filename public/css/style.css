@@ -185,6 +185,9 @@ button.btn-confirm {
   display: block;
 }
 
+form .error {
+  color: #ec2d2d;
+}
 /* notification */
 .errorNotification {
   width: 200px;
@@ -199,6 +202,7 @@ button.btn-confirm {
   color: #fff;
   margin-top: -100%;
   transition: all 0.4s;
+  z-index: 100;
 }
 .errorNotification.active {
   margin-top: 0;
@@ -216,6 +220,7 @@ button.btn-confirm {
   color: #fff;
   margin-top: -100%;
   transition: all 0.4s;
+  z-index: 100;
 }
 .successNotification.active {
   margin-top: 0;

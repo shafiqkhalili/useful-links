@@ -6,7 +6,6 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')();
 
 admin.initializeApp();
-const userCollectionRef = admin.firestore().collection('users');
 
 const app = express();
 
@@ -58,23 +57,18 @@ const validateFirebaseIdToken = async (req, res, next) => {
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.use(cors({ origin: ['http://localhost:5000', 'https://useful-links-5c105.web.app'] }));
+app.use(cors({ origin: ['http://localhost:5000', 'https://useful-links-5c105.web.app', 'https://link.shafigh.se'] }));
 //Validating user token
 app.use(cookieParser);
 app.use(validateFirebaseIdToken);
 
-// auth trigger (new user signup)
+const userCollectionRef = admin.firestore().collection('users');
+
 exports.newUserSignUp = functions.auth.user().onCreate(user => {
     // for background triggers you must return a value/promise
     return userCollectionRef.doc(user.uid).set({
         email: user.email
     });
-});
-
-// auth trigger (user deleted)
-exports.userDeleted = functions.auth.user().onDelete(user => {
-    const doc = userCollectionRef.doc(user.uid);
-    return doc.delete();
 });
 
 
@@ -121,7 +115,9 @@ app.get("/:uid/links/:docId", async (req, res) => {
 app.post("/:uid/links", async (req, res) => {
     try {
         const link = req.body;
-
+        if (link.title === "" || link.url === "") {
+            res.status(204).send("Title / Url cannot be empty");
+        }
         await userCollectionRef.doc(req.params.uid).collection("links").add(link);
 
         res.status(201).send();

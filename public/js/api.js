@@ -88,6 +88,8 @@ async function addLink(data) {
             linkForm.reset();
             linkForm.querySelector('.error').textContent = '';
             linkModal.classList.remove('open');
+        } else {
+            linkForm.querySelector('.error').textContent = await response.text();
         }
     }
     catch (err) {
@@ -130,6 +132,7 @@ async function getLink(docId) {
         const uid = await getUserId();
 
         const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}/${docId}`;
+
         const response = await fetch(`${apiUrl}`, {
             headers: {
                 'Authorization': `Bearer ${userToken}`
@@ -157,17 +160,17 @@ const getLinks = async (search) => {
                 'Authorization': `Bearer ${userToken}`
             }
         });
-
+        let linksArray = [];
         if (response.ok) {
 
             const links = await response.json();
             // return links;
-            let linksArray = [];
+
             links.forEach(doc => {
                 linksArray.push({ ...doc, id: doc.id });
             });
-            return linksArray;
         }
+        return linksArray;
     }
     catch (err) {
         showErrorNotification(err);
