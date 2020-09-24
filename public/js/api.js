@@ -3,10 +3,11 @@
 
 // const apiUrl = 'http://localhost:5001/useful-links-5c105/us-central1/users/';
 const config = {
-    userCollection: "https://us-central1-useful-links-5c105.cloudfunctions.net/users",
+    // userCollection: "https://us-central1-useful-links-5c105.cloudfunctions.net/users",
+    userCollection: 'http://localhost:5001/useful-links-5c105/us-central1/users/',
     linkCollection: "links",
 };
-const getUserToken = () => {
+const getUserToken = async () => {
     return new Promise((resolve, reject) => {
 
         try {
@@ -14,17 +15,17 @@ const getUserToken = () => {
             if (userToken) {
                 resolve(userToken);
             } else {
-                showErrorNotification('userToken not fetched');
-                reject('Promise rejected!');
+                showErrorNotification("userToken not authenticated");
+                reject('Token not retreived!');
             }
         } catch (error) {
-            showErrorNotification('userToken not fetched');
-            reject('Promise rejected!');
+            showErrorNotification(error.textContent);
+            reject(`Promise rejected! ${error}`);
         }
     });
 };
 
-const getUserId = () => {
+const getUserId = async () => {
     return new Promise((resolve, reject) => {
 
         try {
@@ -33,11 +34,11 @@ const getUserId = () => {
                 resolve(user.uid);
             } else {
                 showErrorNotification('userToken not fetched');
-                reject('Promise rejected!');
+                reject("user not logged in");
             }
         } catch (error) {
             showErrorNotification('uid not fetched');
-            reject('Promise rejected!');
+            reject(error);
         }
     });
 };
@@ -148,12 +149,16 @@ async function getLink(docId) {
     }
 
 }
-const getLinks = async (search) => {
+const getLinks = async ({
+    search = '',
+    limit = 10,
+    lastTitle = ''
+} = {}) => {
     try {
         const userToken = await getUserToken();
         const uid = await getUserId();
 
-        const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}`;
+        const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}?search=${search}&lastItem=${lastTitle}&limit=${limit}`;
 
         const response = await fetch(apiUrl, {
             headers: {
@@ -165,11 +170,13 @@ const getLinks = async (search) => {
 
             const links = await response.json();
             // return links;
-
             links.forEach(doc => {
                 linksArray.push({ ...doc, id: doc.id });
             });
+        } else if (search !== "") {
+            showErrorNotification(response.statusText);
         }
+
         return linksArray;
     }
     catch (err) {

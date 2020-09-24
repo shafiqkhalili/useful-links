@@ -5,6 +5,7 @@ const linkForm = document.querySelector('.link-modal form');
 const searchInput = document.querySelector('.search');
 const linkUl = document.querySelector('.link-list');
 let requestPending = false;
+let linkTitle = '';
 
 
 const openModal = () => {
@@ -12,6 +13,7 @@ const openModal = () => {
     // linkForm.querySelector("input[name='id']").value = "";
     linkForm.id.value = "";
     linkModal.classList.add('open');
+    linkForm.title.focus();
 };
 const openDeleteModal = (id) => {
     deleteModal.classList.add('open');
@@ -59,18 +61,26 @@ const deleteConfirm = async (id) => {
         requestPending = true;
         linkForm.id.value = id;
         const result = await deleteLink(id);
-        await renderLinks();
+        await renderLinks({ search: searchInput.value, lastTitle: linkTitle });
         requestPending = false;
     }
 };
 
-const renderLinks = async (search = "") => {
+const renderLinks = async ({
+    search = '',
+    limit = 20,
+    lastTitle = ''
+} = {}) => {
     try {
         const uid = await getUserId();
 
-        const links = await getLinks(search);
-
-        linkUl.innerHTML = '';
+        let links = await getLinks({ search: search, limit: limit, lastTitle: lastTitle });
+        if (lastTitle === "") {
+            linkUl.innerHTML = '';
+        }
+        if (search !== "") {
+            links = links.filter(link => link.title.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+        }
 
         links.forEach(link => {
 
@@ -84,7 +94,8 @@ const renderLinks = async (search = "") => {
             const spanUrl = document.createElement('span');
             spanUrl.classList.add("link-url");
             const a = document.createElement('a');
-            a.href = `//${link.url}`;
+            
+            a.href = `${link.url}`;
             a.textContent = link.url;
             a.target = '_blank';
             spanUrl.appendChild(a);
@@ -100,7 +111,7 @@ const renderLinks = async (search = "") => {
             linkUl.appendChild(li);
 
         });
-        if (links !== undefined && links.length === 0) {
+        if (links.length === 0 && linkTitle === "") {
             linkUl.innerHTML = `<li>No data found</li>`;
         }
     } catch (error) {
@@ -114,11 +125,10 @@ newLinkBtn.addEventListener('click', openModal);
 //Search input
 searchInput.addEventListener('keyup', async (e) => {
     const search = e.target.value;
-    if (search.length > 3 && !requestPending) {
-        requestPending = true;
-        await renderLinks(search.toLowerCase());
-        requestPending = false;
-    }
+
+    requestPending = true;
+    await renderLinks({ search: search, lastTitle: linkTitle });
+
 });
 
 // close request modal
@@ -136,13 +146,16 @@ deleteModal.addEventListener('click', (e) => {
 // add a new request
 linkForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-
+    linkForm.querySelector('.error').textContent = "";
+    if (linkForm.title.value === "" || linkForm.url.value === "") {
+        linkForm.querySelector('.error').textContent = "Inputs cannot be empty";
+        return;
+    }
     const data = {
         title: linkForm.title.value,
         url: linkForm.url.value
     };
     if (!requestPending) {
-        console.log("submitted");
         requestPending = true;
         if (linkForm.id.value !== "") {
             await updateLink(linkForm.id.value, data);
@@ -152,13 +165,21 @@ linkForm.addEventListener('submit', async (e) => {
         requestPending = false;
     }
 
-    await renderLinks();
+    await renderLinks({ search: searchInput.value });
 });
 const lazyLoad = async () => {
+    linkTitle = "";
+
     const scrollIsAtTheBottom = (document.documentElement.scrollHeight - window.innerHeight) === window.scrollY;
     if (scrollIsAtTheBottom) {
-        const linkTitle = linkUl.lastChild.firstElementChild.textContent;
-        console.log(linkTitle);
+        requestPending = true;
+
+        if (linkUl.lastChild) {
+            linkTitle = linkUl.lastChild.firstElementChild.textContent;
+        }
+        console.log("linkTitle ", linkTitle);
+        await renderLinks({ search: searchInput.value, lastTitle: linkTitle });
+        linkTitle = "";
     }
 };
 window.addEventListener('scroll', lazyLoad);

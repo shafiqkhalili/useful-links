@@ -77,7 +77,25 @@ exports.newUserSignUp = functions.auth.user().onCreate(user => {
 app.get("/:uid/links", async (req, res) => {
 
     try {
-        const snapshot = await userCollectionRef.doc(req.params.uid).collection("links").get();
+        let search = req.query.search || "";
+        let orderBy = req.query.orderBy || "title";
+        let orderDir = req.query.orderDir || "asc";
+        let dataLimit = req.query.limit || 50;
+        let lastItem = req.query.lastItem || "";
+
+        let docRef = userCollectionRef.doc(req.params.uid).collection("links");
+        if (search !== "" && search !== undefined) {
+            console.log("Search word: ", search);
+            docRef = docRef.where("title", ">=", search);
+        }
+        console.log("Limit:", dataLimit);
+        docRef = docRef.orderBy(orderBy, orderDir);
+        if (lastItem !== "" && lastItem !== undefined) {
+            console.log("last item: ", lastItem);
+            docRef = docRef.startAfter(lastItem);
+        }
+        docRef = docRef.limit(parseInt(dataLimit));
+        const snapshot = await docRef.get();
 
         let links = [];
         snapshot.forEach((doc) => {

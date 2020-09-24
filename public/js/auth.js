@@ -4,6 +4,8 @@ const authWrapper = document.querySelector('.auth');
 const registerForm = document.querySelector('.register');
 const loginForm = document.querySelector('.login');
 const signOut = document.querySelector('.sign-out');
+const gitHubLogin = document.getElementById('github');
+const resetPassword = document.getElementById('resetPassword');
 
 // toggle auth modals
 authSwitchLinks.forEach(link => {
@@ -28,7 +30,7 @@ registerForm.addEventListener('submit', (e) => {
         });
 });
 
-// login form
+// login using Github
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -36,6 +38,36 @@ loginForm.addEventListener('submit', (e) => {
     const password = loginForm.password.value;
     loginForm.querySelector('.error').textContent = "";
     firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(user => {
+            loginForm.reset();
+        })
+        .catch(error => {
+            loginForm.querySelector('.error').textContent = error.message;
+        });
+});
+resetPassword.addEventListener('click', (e) => {
+    e.preventDefault();
+    let auth = firebase.auth();
+    const email = loginForm.email.value;
+    loginForm.querySelector('.error').textContent = "";
+
+    if (email === "") {
+        loginForm.querySelector('.error').textContent = "Email cannot be empty!";
+        return;
+    }
+    auth.sendPasswordResetEmail(email).then(() => {
+        showSuccessNotification("Email sent");
+        loginForm.querySelector('.error').textContent = "Check your email!";
+    }).catch((error) => {
+        loginForm.querySelector('.error').textContent = error.message;
+    });
+});
+// login using Github
+gitHubLogin.addEventListener('click', (e) => {
+    e.preventDefault();
+    loginForm.querySelector('.error').textContent = "";
+
+    firebase.auth().signInWithPopup(provider)
         .then(user => {
             loginForm.reset();
         })
@@ -56,13 +88,13 @@ signOut.addEventListener('click', () => {
 
 // auth listener
 firebase.auth().onAuthStateChanged(user => {
-
     if (user) {
         renderLinks();
-
+        document.querySelector('header').style.display = "flex";
         authWrapper.classList.remove('open');
         authModals.forEach(modal => modal.classList.remove('active'));
     } else {
+        document.querySelector('header').style.display = "none";
         authWrapper.classList.add('open');
         authModals[0].classList.add('active');
     }
