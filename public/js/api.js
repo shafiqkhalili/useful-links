@@ -1,10 +1,9 @@
 // Initialize your Web app as described in the Get started for Web
 // Firebase previously initialized using firebase.initializeApp().
 
-// const apiUrl = 'http://localhost:5001/useful-links-5c105/us-central1/users/';
 const config = {
-    // userCollection: "https://us-central1-useful-links-5c105.cloudfunctions.net/users",
-    userCollection: 'http://localhost:5001/useful-links-5c105/us-central1/users/',
+    userCollection: "https://us-central1-useful-links-5c105.cloudfunctions.net/users",
+    // userCollection: 'http://localhost:5001/useful-links-5c105/us-central1/users/',
     linkCollection: "links",
 };
 const getUserToken = async () => {
@@ -49,7 +48,7 @@ async function deleteLink(docId) {
         const uid = await getUserId();
 
         const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}/${docId}`;
-        const response = await fetch(apiUrl, {
+        const response = await fetch(`${apiUrl}`, {
             method: "DELETE",
             headers: {
                 'Authorization': `Bearer ${userToken}`
@@ -61,7 +60,6 @@ async function deleteLink(docId) {
             deleteModal.querySelector('.error').textContent = '';
             deleteModal.classList.remove('open');
         } else {
-
             showErrorNotification("Oops! link not deleted");
         }
     }
@@ -76,7 +74,7 @@ async function addLink(data) {
         const uid = await getUserId();
 
         const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}`;
-        const response = await fetch(apiUrl, {
+        const response = await fetch(`${apiUrl}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -160,7 +158,7 @@ const getLinks = async ({
 
         const apiUrl = `${config.userCollection}/${uid}/${config.linkCollection}?search=${search}&lastItem=${lastTitle}&limit=${limit}`;
 
-        const response = await fetch(apiUrl, {
+        const response = await fetch(`${apiUrl}`, {
             headers: {
                 'Authorization': `Bearer ${userToken}`
             }

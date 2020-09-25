@@ -136,9 +136,12 @@ app.post("/:uid/links", async (req, res) => {
         if (link.title === "" || link.url === "") {
             res.status(204).send("Title / Url cannot be empty");
         }
-        await userCollectionRef.doc(req.params.uid).collection("links").add(link);
-
-        res.status(201).send();
+        const result = await userCollectionRef.doc(req.params.uid).collection("links").add(link);
+        if (result) {
+            res.status(201).send(`Documnet created successfully!`);
+        } else {
+            res.status(404).send(`Document not created! ${result}`);
+        }
 
     } catch (error) {
         res.status(500).send(error.message);
@@ -149,9 +152,13 @@ app.put("/:uid/links/:docId", async (req, res) => {
     try {
         const body = req.body;
 
-        await userCollectionRef.doc(req.params.uid).collection('links').doc(req.params.docId).update(body);
+        const result = await userCollectionRef.doc(req.params.uid).collection('links').doc(req.params.docId).update(body);
 
-        res.status(200).send();
+        if (result) {
+            res.status(200).send(`Doc ${req.params.docId} updated successfully!`);
+        } else {
+            res.status(404).send(`Doc ${req.params.docId} not found! ${result}`);
+        }
 
     } catch (error) {
         res.status(500).send(error.message);

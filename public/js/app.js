@@ -79,7 +79,9 @@ const renderLinks = async ({
             linkUl.innerHTML = '';
         }
         if (search !== "") {
-            links = links.filter(link => link.title.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+            links = links.filter(link => {
+                return link.title.toLocaleLowerCase().includes(search.toLocaleLowerCase());
+            });
         }
 
         links.forEach(link => {
@@ -94,9 +96,9 @@ const renderLinks = async ({
             const spanUrl = document.createElement('span');
             spanUrl.classList.add("link-url");
             const a = document.createElement('a');
-            
+
             a.href = `${link.url}`;
-            a.textContent = link.url;
+            a.textContent = link.url.substring(0, 20);
             a.target = '_blank';
             spanUrl.appendChild(a);
             li.appendChild(spanUrl);
@@ -126,7 +128,6 @@ newLinkBtn.addEventListener('click', openModal);
 searchInput.addEventListener('keyup', async (e) => {
     const search = e.target.value;
 
-    requestPending = true;
     await renderLinks({ search: search, lastTitle: linkTitle });
 
 });
@@ -155,31 +156,28 @@ linkForm.addEventListener('submit', async (e) => {
         title: linkForm.title.value,
         url: linkForm.url.value
     };
-    if (!requestPending) {
-        requestPending = true;
-        if (linkForm.id.value !== "") {
-            await updateLink(linkForm.id.value, data);
-        } else {
-            await addLink(data);
-        }
-        requestPending = false;
+
+    if (linkForm.id.value !== "") {
+        await updateLink(linkForm.id.value, data);
+    } else {
+        await addLink(data);
     }
 
-    await renderLinks({ search: searchInput.value });
+
+    await renderLinks({ search: searchInput.value, lastTitle: linkTitle });
 });
 const lazyLoad = async () => {
-    linkTitle = "";
 
     const scrollIsAtTheBottom = (document.documentElement.scrollHeight - window.innerHeight) === window.scrollY;
     if (scrollIsAtTheBottom) {
-        requestPending = true;
 
-        if (linkUl.lastChild) {
+        if (linkUl.lastChild.firstElementChild) {
             linkTitle = linkUl.lastChild.firstElementChild.textContent;
+            console.log("linkTitle ", linkTitle);
+            await renderLinks({ search: searchInput.value, lastTitle: linkTitle });
+            linkTitle = "";
         }
-        console.log("linkTitle ", linkTitle);
-        await renderLinks({ search: searchInput.value, lastTitle: linkTitle });
-        linkTitle = "";
+
     }
 };
 window.addEventListener('scroll', lazyLoad);
